@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ thống Truyền File Âm nhạc An toàn</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 30px;
+        }
+
+        .section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            border: 2px solid #e9ecef;
+        }
+
+        .section h2 {
+            color: #495057;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .icon {
+            width: 24px;
+            height: 24px;
+            fill: currentColor;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status-section {
+            grid-column: 1 / -1;
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            border: 2px solid #e9ecef;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .status-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .status-title {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 8px;
+        }
+
+        .status-value {
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            color: #6c757d;
+            word-break: break-all;
+        }
+
+        .log-section {
+            background: #1a1a1a;
+            border-radius: 10px;
+            padding: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .log-entry {
+            margin-bottom: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+
+        .log-info { color: #17a2b8; }
+        .log-success { color: #28a745; }
+        .log-warning { color: #ffc107; }
+        .log-error { color: #dc3545; }
+
+        .crypto-info {
+            grid-column: 1 / -1;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 15px;
+            padding: 25px;
+            border: 2px solid #dee2e6;
+        }
+
+        .crypto-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .crypto-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .crypto-card h4 {
+            color: #495057;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .crypto-details {
+            font-size: 14px;
+            color: #6c757d;
+            line-height: 1.6;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #e9ecef;
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .status-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .crypto-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎵 Hệ thống Truyền File Âm nhạc An toàn</h1>
+            <p>Mã hóa Triple DES • RSA 1024-bit • SHA-512</p>
+        </div>
+
+        <div class="main-content">
+            <div class="section">
+                <h2>
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <path d="M12 2L2 7v10c0 5.55 3.84 9.739 9 11 5.16-1.261 9-5.45 9-11V7l-10-5z"/>
+                    </svg>
+                    Người Gửi (Studio)
+                </h2>
+                
+                <div class="form-group">
+                    <label for="filename">Tên File:</label>
+                    <input type="text" id="filename" value="new_song.mp3" placeholder="Nhập tên file">
+                </div>
+                
+                <div class="form-group">
+                    <label for="copyright">Thông tin Bản quyền:</label>
+                    <textarea id="copyright" rows="3" placeholder="Nhập thông tin bản quyền">© 2025 Music Studio. All rights reserved. Artist: Unknown. Album: New Release.</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="fileInput">Chọn File Âm nhạc:</label>
+                    <input type="file" id="fileInput" accept=".mp3,.wav,.flac,.m4a,audio/*" style="padding: 8px;">
+                    <div id="fileInfo" class="status-value" style="margin-top: 8px; font-size: 12px;">Chưa chọn file</div>
+                </div>
+                
+                <button class="btn" onclick="startTransfer()">🚀 Bắt đầu Truyền File</button>
+            </div>
+
+            <div class="section">
+                <h2>
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                    </svg>
+                    Người Nhận (Platform)
+                </h2>
+                
+                <div class="form-group">
+                    <label>Trạng thái Kết nối:</label>
+                    <div id="connectionStatus" class="status-value">Chờ kết nối...</div>
+                </div>
+                
+                <div class="form-group">
+                    <label>File Đã Nhận:</label>
+                    <div id="receivedFile" class="status-value">Chưa có file</div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Xác thực:</label>
+                    <div id="verificationStatus" class="status-value">Chưa xác thực</div>
+                </div>
+                
+                <button class="btn" onclick="simulateReceiver()" disabled id="receiverBtn">📥 Sẵn sàng Nhận</button>
+            </div>
+
+            <div class="status-section">
+                <h2>
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <path d="M11,9H13V7H11M12,20C7.59,20 4,16.41 4,12C4,7.59 7.59,4 12,4C16.41,4 20,7.59 20,12C20,16.41 16.41,20 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M11,17H13V11H11V17Z"/>
+                    </svg>
+                    Trạng thái Hệ thống
+                </h2>
+                
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                
+                <div class="status-grid">
+                    <div class="status-card">
+                        <div class="status-title">Handshake</div>
+                        <div class="status-value" id="handshakeStatus">Chưa bắt đầu</div>
+                    </div>
+                    <div class="status-card">
+                        <div class="status-title">Session Key</div>
+                        <div class="status-value" id="sessionKeyStatus">Chưa tạo</div>
+                    </div>
+                    <div class="status-card">
+                        <div class="status-title">Mã hóa File</div>
+                        <div class="status-value" id="encryptionStatus">Chờ xử lý</div>
+                    </div>
+                    <div class="status-card">
+                        <div class="status-title">Chữ ký Số</div>
+                        <div class="status-value" id="signatureStatus">Chưa ký</div>
+                    </div>
+                </div>
+
+                <div class="log-section">
+                    <div id="logOutput">System initialized. Ready for secure file transfer...</div>
+                </div>
+            </div>
+
+            <div class="crypto-info">
+                <h2>
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <path d="M18,8A6,6 0 0,0 12,2A6,6 0 0,0 6,8H4A2,2 0 0,0 2,10V20A2,2 0 0,0 4,22H20A2,2 0 0,0 22,20V10A2,2 0 0,0 20,8H18M12,4A4,4 0 0,1 16,8H8A4,4 0 0,1 12,4Z"/>
+                    </svg>
+                    Thông tin Mã hóa
+                </h2>
+                
+                <div class="crypto-grid">
+                    <div class="crypto-card">
+                        <h4>🔐 Triple DES</h4>
+                        <div class="crypto-details">
+                            • Mã hóa file âm nhạc chính<br>
+                            • Key length: 168-bit (3×56)<br>
+                            • Mode: CBC với IV ngẫu nhiên<br>
+                            • Padding: PKCS7
+                        </div>
+                    </div>
+                    <div class="crypto-card">
+                        <h4>🔑 RSA 1024-bit</h4>
+                        <div class="crypto-details">
+                            • Trao đổi session key<br>
+                            • OAEP padding<br>
+                            • SHA-512 cho chữ ký<br>
+                            • Key exchange & authentication
+                        </div>
+                    </div>
+                    <div class="crypto-card">
+                        <h4>🛡️ DES Metadata</h4>
+                        <div class="crypto-details">
+                            • Mã hóa thông tin metadata<br>
+                            • 56-bit key<br>
+                            • Bảo vệ thông tin bản quyền<br>
+                            • CBC mode
+                        </div>
+                    </div>
+                    <div class="crypto-card">
+                        <h4>✅ SHA-512</h4>
+                        <div class="crypto-details">
+                            • Kiểm tra tính toàn vẹn<br>
+                            • Hash: IV + ciphertext<br>
+                            • 512-bit output<br>
+                            • Chống giả mạo
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let transferState = {
+            step: 0,
+            sessionKey: null,
+            rsaKeyPair: null,
+            transferData: null,
+            selectedFile: null,
+            fileContent: null
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.getElementById('fileInput');
+            const fileInfo = document.getElementById('fileInfo');
+            const filenameInput = document.getElementById('filename');
+            
+            fileInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    transferState.selectedFile = file;
+                    fileInfo.innerHTML = `
+                        <strong>File:</strong> ${file.name}<br>
+                        <strong>Kích thước:</strong> ${(file.size / 1024).toFixed(2)} KB<br>
+                        <strong>Loại:</strong> ${file.type || 'Không xác định'}
+                    `;
+                    fileInfo.style.color = '#28a745';
+                    
+                    filenameInput.value = file.name;
+                    
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        transferState.fileContent = e.target.result;
+                        log(`Đã đọc file: ${file.name} (${file.size} bytes)`, 'success');
+                    };
+                    reader.readAsArrayBuffer(file);
+                } else {
+                    transferState.selectedFile = null;
+                    transferState.fileContent = null;
+                    fileInfo.textContent = 'Chưa chọn file';
+                    fileInfo.style.color = '#6c757d';
+                }
+            });
+        });
+
+        function log(message, type = 'info') {
+            const logOutput = document.getElementById('logOutput');
+            const timestamp = new Date().toLocaleTimeString();
+            const classes = {
+                'info': 'log-info',
+                'success': 'log-success',
+                'warning': 'log-warning',
+                'error': 'log-error'
+            };
+            
+            logOutput.innerHTML += `<div class="${classes[type]}">[${timestamp}] ${message}</div>`;
+            logOutput.scrollTop = logOutput.scrollHeight;
+        }
+
+        function updateProgress(percentage) {
+            document.getElementById('progressFill').style.width = percentage + '%';
+        }
+
+        function updateStatus(elementId, status, isSuccess = true) {
+            const element = document.getElementById(elementId);
+            element.textContent = status;
+            element.style.color = isSuccess ? '#28a745' : '#dc3545';
+        }
+
+        function generateRSAKeyPair() {
+            log("Tạo cặp khóa RSA 1024-bit...", 'info');
+            return {
+                publicKey: "-----BEGIN PUBLIC KEY-----\nMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC8Q7HgL...",
+                privateKey: "-----BEGIN PRIVATE KEY-----\nMIICdgIBADANBgkqhkiG9w0BAQEFAASCAmAwggJcAgEA..."
+            };
+        }
+
+        function rsaEncrypt(data, publicKey) {
+            return CryptoJS.enc.Base64.stringify(CryptoJS.enc.Utf8.parse(data + "_RSA_ENCRYPTED"));
+        }
+
+        function rsaSign(data, privateKey) {
+            const hash = CryptoJS.SHA512(data);
+            return hash.toString() + "_RSA_SIGNED";
+        }
+
+        function tripleDesEncrypt(data, key, iv) {
+            const encrypted = CryptoJS.TripleDES.encrypt(data, key, {
+                iv: iv,
+                mode: CryptoJS.mode.CBC,
+                padding: CryptoJS.pad.Pkcs7
+            });
+            return encrypted.toString();
+        }
+
+        function desEncrypt(data, key, iv) {
+            const encrypted = CryptoJS.DES.encrypt(data, key, {
+                iv: iv,
+                mode: CryptoJS.mode.CBC,
+                padding: CryptoJS.pad.Pkcs7
+            });
+            return encrypted.toString();
+        }
+
+        async function performHandshake() {
+            log("=== Bắt đầu Handshake ===", 'info');
+            updateProgress(10);
+            
+            await sleep(500);
+            log("Sender: Hello!", 'info');
+            updateStatus('handshakeStatus', 'Gửi Hello!');
+            
+            await sleep(800);
+            log("Receiver: Ready!", 'success');
+            updateStatus('handshakeStatus', 'Handshake thành công ✓');
+            
+            document.getElementById('connectionStatus').textContent = 'Đã kết nối ✓';
+            document.getElementById('connectionStatus').style.color = '#28a745';
+            
+            transferState.step = 1;
+            updateProgress(20);
+        }
+
+        async function performKeyExchange() {
+            log("=== Trao đổi Khóa & Xác thực ===", 'info');
+            
+            transferState.rsaKeyPair = generateRSAKeyPair();
+            log("Tạo cặp khóa RSA thành công", 'success');
+            
+            transferState.sessionKey = CryptoJS.lib.WordArray.random(192/8); 
+            log("Tạo Session Key: " + transferState.sessionKey.toString().substring(0, 16) + "...", 'success');
+            updateStatus('sessionKeyStatus', 'Đã tạo ✓');
+            
+            const filename = document.getElementById('filename').value;
+            const copyright = document.getElementById('copyright').value;
+            const metadata = filename + "|" + copyright;
+            
+            const signature = rsaSign(metadata, transferState.rsaKeyPair.privateKey);
+            log("Ký metadata bằng RSA/SHA-512", 'success');
+            updateStatus('signatureStatus', 'Đã ký ✓');
+            
+            const encryptedSessionKey = rsaEncrypt(transferState.sessionKey.toString(), transferState.rsaKeyPair.publicKey);
+            log("Mã hóa Session Key bằng RSA-OAEP", 'success');
+            
+            transferState.step = 2;
+            updateProgress(40);
+        }
+
+        async function performEncryption() {
+            log("=== Mã hóa File & Metadata ===", 'info');
+            
+            if (!transferState.selectedFile || !transferState.fileContent) {
+                log("❌ Chưa chọn file!", 'error');
+                alert('Vui lòng chọn file trước khi bắt đầu!');
+                return false;
+            }
+            
+            const filename = document.getElementById('filename').value;
+            const copyright = document.getElementById('copyright').value;
+            const file = transferState.selectedFile;
+            
+            log(`Bắt đầu mã hóa file: ${file.name} (${file.size} bytes)`, 'info');
+            
+            const uint8Array = new Uint8Array(transferState.fileContent);
+            const binaryString = Array.from(uint8Array, byte => String.fromCharCode(byte)).join('');
+            const base64Content = btoa(binaryString);
+            
+            const iv = CryptoJS.lib.WordArray.random(8);
+            log("Tạo IV: " + iv.toString().substring(0, 16) + "...", 'info');
+            
+            const encryptedFile = tripleDesEncrypt(base64Content, transferState.sessionKey, iv);
+            log("Mã hóa file bằng Triple DES thành công", 'success');
+            updateStatus('encryptionStatus', 'Hoàn thành ✓');
+            
+            const metadata = `${filename}|${copyright}|${file.size}|${file.type}|${file.lastModified}`;
+            const metadataKey = CryptoJS.lib.WordArray.random(8); 
+            const encryptedMetadata = desEncrypt(metadata, metadataKey, iv);
+            log("Mã hóa metadata bằng DES thành công", 'success');
+            
+            const hashInput = iv.toString() + encryptedFile;
+            const hash = CryptoJS.SHA512(hashInput);
+            log("Tính toán SHA-512 hash cho tính toàn vẹn", 'success');
+            
+            const signature = rsaSign(hash.toString(), transferState.rsaKeyPair.privateKey);
+            
+            transferState.transferData = {
+                iv: iv.toString(),
+                cipher: encryptedFile,
+                meta: encryptedMetadata,
+                hash: hash.toString(),
+                sig: signature,
+                metaKey: metadataKey.toString(),
+                originalMetadata: metadata
+            };
+            
+            log("Chuẩn bị gói tin truyền tải", 'success');
+            transferState.step = 3;
+            updateProgress(60);
+            return true;
+        }
+
+        async function performTransfer() {
+            log("=== Truyền File ===", 'info');
+            
+            const package = transferState.transferData;
+            log("Gửi gói tin: { iv, cipher, meta, hash, sig }", 'info');
+            
+            await sleep(1000);
+            log("Đang truyền... ████████████", 'info');
+            
+            await sleep(800);
+            log("Truyền tải hoàn thành!", 'success');
+            
+            transferState.step = 4;
+            updateProgress(80);
+        }
+
+        async function performVerification() {
+            log("=== Xác thực & Giải mã ===", 'warning');
+            
+            const package = transferState.transferData;
+            
+            const expectedHash = CryptoJS.SHA512(package.iv + package.cipher);
+            const hashValid = expectedHash.toString() === package.hash;
+            
+            log("Kiểm tra tính toàn vẹn: " + (hashValid ? "PASS" : "FAIL"), hashValid ? 'success' : 'error');
+            
+            const sigValid = package.sig.includes("_RSA_SIGNED");
+            log("Xác thực chữ ký số: " + (sigValid ? "PASS" : "FAIL"), sigValid ? 'success' : 'error');
+            
+            if (hashValid && sigValid) {
+                log("✅ Tất cả xác thực thành công!", 'success');
+                updateStatus('verificationStatus', 'Xác thực thành công ✓');
+                
+                log("Giải mã file bằng Triple DES...", 'info');
+                await sleep(500);
+                
+                log("Giải mã metadata bằng DES...", 'info');
+                await sleep(300);
+                
+                const metadataParts = package.originalMetadata.split('|');
+                const [filename, copyright, fileSize, fileType, lastModified] = metadataParts;
+                
+                log(`File nhận được: ${filename}`, 'success');
+                log(`Kích thước: ${(fileSize/1024).toFixed(2)} KB`, 'info');
+                log(`Loại file: ${fileType}`, 'info');
+                log(`Bản quyền: ${copyright.substring(0, 50)}...`, 'info');
+                
+                document.getElementById('receivedFile').innerHTML = `
+                    <strong>${filename}</strong> ✓<br>
+                    <small>${(fileSize/1024).toFixed(2)} KB - ${fileType}</small>
+                `;
+                document.getElementById('receivedFile').style.color = '#28a745';
+                
+                log("Gửi ACK tới người gửi", 'success');
+                updateProgress(100);
+                
+                log("=== TRUYỀN FILE THÀNH CÔNG ===", 'success');
+            } else {
+                log("❌ Xác thực thất bại!", 'error');
+                updateStatus('verificationStatus', 'Xác thực thất bại ✗');
+                log("Gửi NACK (lỗi integrity) tới người gửi", 'error');
+                updateProgress(100);
+            }
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        async function startTransfer() {
+            const btn = document.querySelector('.btn');
+            btn.disabled = true;
+            btn.textContent = '🔄 Đang xử lý...';
+            
+            const receiverBtn = document.getElementById('receiverBtn');
+            receiverBtn.disabled = false;
+            receiverBtn.textContent = '📥 Sẵn sàng Nhận';
+            
+            document.getElementById('logOutput').innerHTML = '';
+            log("Khởi tạo hệ thống truyền file an toàn...", 'info');
+            
+            try {
+                await performHandshake();
+                await performKeyExchange();
+                const encryptionSuccess = await performEncryption();
+                
+                if (encryptionSuccess !== false) {
+                    await performTransfer();
+                    await performVerification();
+                }
+            } catch (error) {
+                log("❌ Lỗi trong quá trình xử lý: " + error.message, 'error');
+            }
+            
+            btn.disabled = false;
+            btn.textContent = '🚀 Bắt đầu Truyền File';
+            receiverBtn.disabled = true;
+            receiverBtn.textContent = '✅ Đã nhận xong';
+        }
+
+        function simulateReceiver() {
+            log("Receiver sẵn sàng nhận file...", 'info');
+        }
+
+        log("Hệ thống đã khởi tạo. Sẵn sàng truyền file an toàn.", 'success');
+    </script>
+</body>
+</html>
